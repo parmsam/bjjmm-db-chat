@@ -187,7 +187,10 @@ _ASSISTANT_ICON = icon_svg("podcast")
 _OPEN_LINKS_NEW_TAB_SCRIPT = ui.tags.script("""
 document.addEventListener('click', function(e) {
   const a = e.target.closest('a[href]');
-  if (a && !a.target) a.target = '_blank';
+  if (a && a.href.startsWith('http') && !a.target) {
+    e.preventDefault();
+    window.open(a.href, '_blank', 'noopener,noreferrer');
+  }
 });
 """)
 
