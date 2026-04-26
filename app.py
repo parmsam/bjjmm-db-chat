@@ -182,7 +182,7 @@ WELCOME = (
     .replace("{MODEL_COUNT}", str(len(INDEX)))
 )
 
-_ASSISTANT_ICON = icon_svg("podcast")
+_ASSISTANT_ICON = icon_svg("robot")
 
 
 _PODCAST_PLAYER_SCRIPT = ui.tags.script("""
