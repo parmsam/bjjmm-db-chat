@@ -1,0 +1,5 @@
+shiny
+shinychat
+chatlas
+python-dotenv
+faicons

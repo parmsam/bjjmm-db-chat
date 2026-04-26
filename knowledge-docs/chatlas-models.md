@@ -1,0 +1,136 @@
+---
+title: Model choice
+callout-appearance: simple
+---
+
+Below is a table of model providers that come pre-packaged with chatlas. 
+
+::: callout-note
+### Usage pre-requisites
+
+Each model provider has its own set of pre-requisites. 
+For example, OpenAI requires an API key, while Ollama requires you to install the Ollama CLI and download models.
+To see the pre-requisites for a given provider, visit the relevant usage page in the table below.
+:::
+
+
+| Name                     | Usage                                                    | Enterprise? |
+|--------------------------|----------------------------------------------------------|------------|
+| Anthropic (Claude)       | [`ChatAnthropic()`](../reference/ChatAnthropic.qmd)     |    |
+| AWS Bedrock              | [`ChatBedrockAnthropic()`](../reference/ChatBedrockAnthropic.qmd) | ✅ |
+| OpenAI                   | [`ChatOpenAI()`](../reference/ChatOpenAI.qmd)           |    |
+| Azure OpenAI             | [`ChatAzureOpenAI()`](../reference/ChatAzureOpenAI.qmd) | ✅ |
+| Google (Gemini)          | [`ChatGoogle()`](../reference/ChatGoogle.qmd)           |    |
+| Google (Vertex)          | [`ChatVertex()`](../reference/ChatVertex.qmd)           | ✅ |
+| GitHub model marketplace | [`ChatGithub()`](../reference/ChatGithub.qmd)           |    |
+| Ollama (local models)    | [`ChatOllama()`](../reference/ChatOllama.qmd)           |    |
+| Open Router              | [`ChatOpenRouter()`](../reference/ChatOpenRouter.qmd)   |    |
+| DeepSeek                 | [`ChatDeepSeek()`](../reference/ChatDeepSeek.qmd)       |    |
+| Hugging Face             | [`ChatHuggingFace()`](../reference/ChatHuggingFace.qmd) |    |
+| Databricks               | [`ChatDatabricks()`](../reference/ChatDatabricks.qmd)   | ✅ |
+| Snowflake Cortex         | [`ChatSnowflake()`](../reference/ChatSnowflake.qmd)     | ✅ |
+| Mistral                  | [`ChatMistral()`](../reference/ChatMistral.qmd)         | ✅ |
+| Groq                     | [`ChatGroq()`](../reference/ChatGroq.qmd)               |    |
+| perplexity.ai            | [`ChatPerplexity()`](../reference/ChatPerplexity.qmd)   |    |
+| Cloudflare               | [`ChatCloudflare()`](../reference/ChatCloudflare.qmd)   |    |
+| Portkey                  | [`ChatPortkey()`](../reference/ChatPortkey.qmd)         | ✅ |
+
+
+::: callout-tip
+### Other providers
+
+To use chatlas with a provider not listed in the table above, you have two options:
+
+1. If the model provider is "OpenAI compatible" (i.e., it can be used with the [`openai` Python SDK](https://github.com/openai/openai-python#readme)), use `ChatOpenAI()` with the appropriate `base_url` and `api_key`.
+    * When providers say they are "OpenAI compatible", they usually mean compatible with the [Completions API](https://github.com/openai/openai-python?tab=readme-ov-file#usage). In this case, use [`ChatOpenAICompletions()`](../reference/ChatOpenAICompletions.qmd) instead of `ChatOpenAI()` (the latter uses the newer Responses API).
+2. If you're motivated, implement a new provider by subclassing [`Provider`](https://github.com/posit-dev/chatlas/blob/main/chatlas/_provider.py) and implementing the required methods.
+:::
+
+::: callout-warning
+### Known limitations
+
+Some providers may have a limited amount of support for things like tool calling, structured data extraction, images, etc. In this case, the provider's reference page should include a known limitations section describing the limitations.
+:::
+
+### Model choice
+
+In addition to choosing a model provider, you also need to choose a specific model from that provider. This is important because different models have different capabilities and performance characteristics. For example, some models are faster and cheaper, while others are more accurate and capable of handling more complex tasks.
+
+If you're using `chatlas` inside your organisation, you'll be limited to what your org allows, which is likely to be one provided by a big cloud provider (e.g. `ChatAzureOpenAI()` and `ChatBedrockAnthropic()`). If you're using `chatlas` for your own personal exploration, you have a lot more freedom so we have a few recommendations to help you get started:
+
+- `ChatOpenAI()` or `ChatAnthropic()` are both good places to start. `ChatOpenAI()` defaults to **GPT-4.1**, but you can use `model = "gpt-4.1-nano"` for a cheaper lower-quality model, or `model = "o3"` for more complex reasoning.  `ChatAnthropic()` is similarly good; it defaults to **Claude 4.5 Sonnet** which we have found to be particularly good at writing code.
+
+- `ChatGoogle()` is a strong model with generous free tier (with the downside that [your data is used](https://ai.google.dev/gemini-api/terms#unpaid-services) to improve the model), making it a great place to start if you don't want to spend any money.
+
+- `ChatOllama()`, which uses [Ollama](https://ollama.com), allows you to run models on your own computer. The biggest models you can run locally aren't as good as the state of the art hosted models, but they also don't share your data and and are effectively free.
+
+
+### Model type hints
+
+Some providers like `ChatOpenAI()` and `ChatAnthropic()` provide type hints for the `model` parameter. This makes it quick and easy to find the right model id -- just enter `model=""` and you'll get a list of available models to choose from (assuming your IDE supports type hints).
+
+![Screenshot of model autocompletion](/images/model-type-hints.png){class="shadow rounded mb-3" width="67%" }
+
+::: callout-tip
+If the provider doesn't provide these type hints, try using the `.list_models()` method (mentioned below) to find available models.
+:::
+
+
+### Auto provider
+
+[`ChatAuto()`](../reference/ChatAuto.qmd) provides access to any provider/model combination through one simple string.
+This makes for a nice interactive/prototyping experience, where you can quickly switch between different models and providers, and leverage `chatlas`' smart defaults:
+
+```python
+from chatlas import ChatAuto
+
+# Default provider (OpenAI) & model
+chat = ChatAuto()
+print(chat.provider.name)
+print(chat.provider.model)
+
+# Different provider (Anthropic) & default model
+chat = ChatAuto("anthropic")
+
+# Choose specific provider/model (Claude Sonnet 4)
+chat = ChatAuto("anthropic/claude-sonnet-4-0")
+```
+
+
+### Listing model info
+
+Most providers support the `.list_models()` method, which returns detailed information about all available models, including model IDs, pricing, and metadata. This is particularly useful for:
+
+- Discovering what models are available (ordered by most recent).
+- Comparing model pricing and characteristics.
+- Finding exactly the right model ID to pass to the `Chat` constructor.
+
+```python
+from chatlas import ChatOpenAI
+import pandas as pd
+
+chat = ChatOpenAI()
+models = chat.list_models()
+
+pd.DataFrame(models)
+```
+
+```
+                        id         owned_by  input  output  cached_input  created_at
+0               gpt-5-nano           system   0.05     0.4         0.005  2025-08-05
+1                    gpt-5           system   1.25    10.0         0.125  2025-08-05
+2    gpt-5-mini-2025-08-07           system   0.25     2.0         0.025  2025-08-05
+3               gpt-5-mini           system   0.25     2.0         0.025  2025-08-05
+4    gpt-5-nano-2025-08-07           system   0.05     0.4         0.005  2025-08-05
+..                     ...              ...    ...     ...           ...         ...
+83       gpt-3.5-turbo-16k  openai-internal   3.00     4.0           NaN  2023-05-10
+84                   tts-1  openai-internal    NaN     NaN           NaN  2023-04-19
+85           gpt-3.5-turbo           openai   1.50     2.0           NaN  2023-02-28
+86               whisper-1  openai-internal    NaN     NaN           NaN  2023-02-27
+87  text-embedding-ada-002  openai-internal   0.10     0.0           NaN  2022-12-16
+```
+
+Different providers may include different metadata fields in the model information, but they all generally include the following key details:
+
+- **`id`**: Model identifier to use with the `Chat` constructor
+- **`input`/`output`/`cached_input`**: Token pricing in USD per million tokens
