@@ -205,10 +205,42 @@ if (!customElements.get('buzzsprout-player')) {
 }
 """)
 
+_ICON_LINK_STYLE = (
+    "color:inherit;opacity:0.6;line-height:0;transition:opacity 0.2s;"
+)
+
+_HEADER_ICONS = ui.tags.div(
+    ui.tags.a(
+        icon_svg("podcast", width="22px", fill="currentColor"),
+        href="https://www.bjjmentalmodels.com/podcast",
+        target="_blank",
+        rel="noopener noreferrer",
+        title="BJJ Mental Models Podcast",
+        style=_ICON_LINK_STYLE,
+        onmouseover="this.style.opacity='1'",
+        onmouseout="this.style.opacity='0.6'",
+    ),
+    ui.tags.a(
+        icon_svg("github", width="22px", fill="currentColor"),
+        href="https://github.com/parmsam/bjjmm-db-chat/",
+        target="_blank",
+        rel="noopener noreferrer",
+        title="GitHub repository",
+        style=_ICON_LINK_STYLE,
+        onmouseover="this.style.opacity='1'",
+        onmouseout="this.style.opacity='0.6'",
+    ),
+    style=(
+        "position:fixed;top:12px;right:16px;z-index:9999;"
+        "display:flex;gap:12px;align-items:center;"
+    ),
+)
+
 # --- UI ---
 
 app_ui = ui.page_fillable(
     _PODCAST_PLAYER_SCRIPT,
+    _HEADER_ICONS,
     ui.chat_ui(
         "chat",
         messages=[WELCOME],
