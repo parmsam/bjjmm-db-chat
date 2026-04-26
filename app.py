@@ -184,6 +184,13 @@ WELCOME = (
 
 _ASSISTANT_ICON = icon_svg("podcast")
 
+_OPEN_LINKS_NEW_TAB_SCRIPT = ui.tags.script("""
+document.addEventListener('click', function(e) {
+  const a = e.target.closest('a[href]');
+  if (a && !a.target) a.target = '_blank';
+});
+""")
+
 _PODCAST_PLAYER_SCRIPT = ui.tags.script("""
 if (!customElements.get('buzzsprout-player')) {
   class BuzzsproutPlayer extends HTMLElement {
@@ -207,6 +214,7 @@ if (!customElements.get('buzzsprout-player')) {
 # --- UI ---
 
 app_ui = ui.page_fillable(
+    _OPEN_LINKS_NEW_TAB_SCRIPT,
     _PODCAST_PLAYER_SCRIPT,
     ui.chat_ui(
         "chat",
