@@ -57,74 +57,103 @@ def _read_body(entry: dict, strip_iframes: bool = False) -> str:
 # --- Tools ---
 
 def _make_tools():
-    def get_mental_model(title: str) -> str:
-        """Get the full content of a specific BJJ mental model by its title.
+    def get_mental_models(titles: list[str]) -> str:
+        """Get the full content of one or more BJJ mental models by title.
 
-        Use this whenever the user asks about a specific model or concept by name.
-        Fuzzy matching is applied, so an approximate title is fine.
+        Use this whenever the user asks about specific models or concepts by name.
+        Pass all desired titles in a single call to avoid multiple round-trips.
+        Fuzzy matching is applied, so approximate titles are fine.
 
         Parameters
         ----------
-        title:
-            The name of the mental model to retrieve (e.g. 'Position Over Submission').
+        titles:
+            Names of the mental models to retrieve
+            (e.g. ['Position Over Submission', 'Win Conditions']).
         """
-        titles = [e["title"] for e in INDEX]
-        matches = get_close_matches(title, titles, n=1, cutoff=0.3)
-        if not matches:
-            return (
-                f"No model found matching '{title}'. "
-                "Try search_models() to find what's available."
-            )
-        entry = next(e for e in INDEX if e["title"] == matches[0])
-        if entry.get("deprecated") and entry.get("redirects_to"):
-            redirect_slug = entry["redirects_to"].rstrip("/").split("/")[-1]
-            replacement = next(
-                (e for e in INDEX if e["url"].rstrip("/").split("/")[-1] == redirect_slug),
-                None,
-            )
-            if replacement:
-                entry = replacement
-        body = _read_body(entry)
-        if not body:
-            return f"Could not read content for '{entry['title']}'."
-        return f"# {entry['title']}\nSection: {entry['section']}\nURL: {entry['url']}\n\n{body.strip()}"
+        all_titles = [e["title"] for e in INDEX]
+        sections: list[str] = []
 
-    def search_models(query: str) -> str:
+        for title in titles:
+            matches = get_close_matches(title, all_titles, n=1, cutoff=0.3)
+            if not matches:
+                sections.append(
+                    f"No model found matching '{title}'. "
+                    "Try search_models() to find what's available."
+                )
+                continue
+            entry = next(e for e in INDEX if e["title"] == matches[0])
+            if entry.get("deprecated") and entry.get("redirects_to"):
+                redirect_slug = entry["redirects_to"].rstrip("/").split("/")[-1]
+                replacement = next(
+                    (e for e in INDEX if e["url"].rstrip("/").split("/")[-1] == redirect_slug),
+                    None,
+                )
+                if replacement:
+                    entry = replacement
+            body = _read_body(entry)
+            if not body:
+                sections.append(f"Could not read content for '{entry['title']}'.")
+                continue
+            sections.append(
+                f"# {entry['title']}\nSection: {entry['section']}\nURL: {entry['url']}\n\n{body.strip()}"
+            )
+
+        return "\n\n---\n\n".join(sections)
+
+    def search_models(queries: list[str]) -> str:
         """Search for BJJ mental models by keyword across titles and content.
 
         Use this when the user asks a broad question, mentions a theme, or when
-        you're not sure which specific model(s) to retrieve. Returns matching
-        model titles and a short snippet from each.
+        you're not sure which specific model(s) to retrieve. Pass all relevant
+        search terms in a single call to avoid multiple round-trips. Returns
+        matching model titles and a short snippet from each.
 
         Parameters
         ----------
-        query:
-            Keyword or phrase to search for (e.g. 'competition anxiety', 'guard passing').
+        queries:
+            One or more keywords or phrases to search for
+            (e.g. ['competition anxiety', 'guard passing']).
         """
-        q = query.lower()
-        results = []
-        for entry in INDEX:
-            if entry.get("deprecated"):
+        seen: set[str] = set()
+        results_by_query: dict[str, list[tuple[str, str, str]]] = {}
+
+        for query in queries:
+            q = query.lower()
+            matches = []
+            for entry in INDEX:
+                if entry.get("deprecated"):
+                    continue
+                if entry["title"] in seen:
+                    continue
+                body = _read_body(entry, strip_iframes=True)
+                if q in entry["title"].lower() or q in body.lower():
+                    snippet = next(
+                        (l.strip().lstrip("#*").strip() for l in body.splitlines() if l.strip()),
+                        "",
+                    )
+                    matches.append((entry["title"], entry["section"], snippet[:120]))
+                    seen.add(entry["title"])
+            results_by_query[query] = matches
+
+        total = sum(len(v) for v in results_by_query.values())
+        if total == 0:
+            return f"No models found matching: {', '.join(repr(q) for q in queries)}."
+
+        lines = [f"Found {total} model(s) across {len(queries)} search term(s):\n"]
+        shown = 0
+        for query, matches in results_by_query.items():
+            if not matches:
+                lines.append(f"**'{query}'**: no matches.")
                 continue
-            body = _read_body(entry, strip_iframes=True)
-            if q in entry["title"].lower() or q in body.lower():
-                snippet = next(
-                    (l.strip().lstrip("#*").strip() for l in body.splitlines() if l.strip()),
-                    "",
-                )
-                results.append((entry["title"], entry["section"], snippet[:120]))
-
-        if not results:
-            return f"No models found matching '{query}'."
-
-        lines = [f"Found {len(results)} model(s) matching '{query}':\n"]
-        for title, section, snippet in results[:20]:
-            lines.append(f"- **{title}** ({section}): {snippet}")
-        if len(results) > 20:
-            lines.append(f"\n...and {len(results) - 20} more. Try a more specific query.")
+            lines.append(f"**'{query}'** ({len(matches)} match(es)):")
+            for title, section, snippet in matches[:20]:
+                lines.append(f"  - **{title}** ({section}): {snippet}")
+                shown += 1
+            if len(matches) > 20:
+                lines.append(f"  ...and {len(matches) - 20} more for this term.")
         return "\n".join(lines)
 
-    return get_mental_model, search_models
+    return get_mental_models, search_models
 
 
 # --- Prompts ---
@@ -141,8 +170,8 @@ _prompt_base = (_HERE / "system-prompt.md").read_text(encoding="utf-8")
 SYSTEM_PROMPT = (
     _prompt_base
     + "\n\n## Available Models\n\n"
-    + "Use `get_mental_model(title)` to retrieve a model's full content "
-    + "and `search_models(query)` to find relevant models by keyword.\n"
+    + "Use `get_mental_models(titles)` to retrieve one or more models' full content in a single call "
+    + "and `search_models(queries)` to find relevant models — pass multiple terms in one call to avoid round-trips.\n"
     + _build_model_index()
 )
 
@@ -198,12 +227,12 @@ def server(input, output, session: Session):
 
     turn_count = reactive.value(0)
 
-    get_mental_model, search_models = _make_tools()
+    get_mental_models, search_models = _make_tools()
     client = ChatAnthropic(
         model="claude-sonnet-4-6",
         system_prompt=SYSTEM_PROMPT,
     )
-    client.register_tool(get_mental_model)
+    client.register_tool(get_mental_models)
     client.register_tool(search_models)
 
     @chat.on_user_submit
