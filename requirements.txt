@@ -3,3 +3,4 @@ shinychat
 chatlas
 python-dotenv
 faicons
+anthropic
