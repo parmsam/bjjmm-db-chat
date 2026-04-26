@@ -184,15 +184,6 @@ WELCOME = (
 
 _ASSISTANT_ICON = icon_svg("podcast")
 
-_OPEN_LINKS_NEW_TAB_SCRIPT = ui.tags.script("""
-document.addEventListener('click', function(e) {
-  const a = e.target.closest('a[href]');
-  if (a && a.href.startsWith('http') && !a.target) {
-    e.preventDefault();
-    window.open(a.href, '_blank', 'noopener,noreferrer');
-  }
-});
-""")
 
 _PODCAST_PLAYER_SCRIPT = ui.tags.script("""
 if (!customElements.get('buzzsprout-player')) {
@@ -217,7 +208,6 @@ if (!customElements.get('buzzsprout-player')) {
 # --- UI ---
 
 app_ui = ui.page_fillable(
-    _OPEN_LINKS_NEW_TAB_SCRIPT,
     _PODCAST_PLAYER_SCRIPT,
     ui.chat_ui(
         "chat",
