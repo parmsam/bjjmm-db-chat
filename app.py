@@ -4,7 +4,7 @@ import json
 import html as html_lib
 from difflib import get_close_matches
 from dotenv import load_dotenv
-from chatlas import ChatAnthropic, ContentToolResult
+from chatlas import ChatOpenAI, ContentToolResult
 from faicons import icon_svg
 from shiny import App, reactive, ui, Session
 
@@ -261,8 +261,8 @@ def server(input, output, session: Session):
     turn_count = reactive.value(0)
 
     get_mental_models, search_models = _make_tools()
-    client = ChatAnthropic(
-        model="claude-sonnet-4-6",
+    client = ChatOpenAI(
+        model="gpt-4o",
         system_prompt=SYSTEM_PROMPT,
     )
     client.register_tool(get_mental_models)
