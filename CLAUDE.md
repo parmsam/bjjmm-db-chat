@@ -9,7 +9,7 @@ The app includes a per-session message limit controlled by `MAX_USER_TURNS` in `
 ## Tech Stack
 
 - **shinychat** (`shinychat` Python package) — chat UI component for Shiny
-- **chatlas** — LLM provider integration; defaults to `ChatAnthropic` with Claude Sonnet 4.6
+- **chatlas** — LLM provider integration; defaults to `ChatOpenAI` with GPT-4o
 - **shiny** — application framework
 
 Install dependencies:

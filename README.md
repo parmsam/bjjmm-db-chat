@@ -10,7 +10,7 @@ The application uses:
 - **[chatlas](https://posit-dev.github.io/chatlas/)** — LLM provider integration, model-agnostic Python library
 - **[shiny](https://shiny.posit.co/py/)** — Python web application framework
 
-The system defaults to Claude Sonnet 4.6 via `ChatAnthropic` but can be switched to other providers (OpenAI, Google, etc.) by updating the `Chat*()` constructor in `app.py`.
+The system defaults to GPT-4o via `ChatOpenAI` but can be switched to other providers (Anthropic, Google, etc.) by updating the `Chat*()` constructor in `app.py`.
 
 ## Key Configuration
 
@@ -24,18 +24,18 @@ The app enforces a `MAX_USER_TURNS` limit of 10 messages per session to control 
 uv pip install shiny shinychat chatlas
 ```
 
-### 2. Set your Anthropic API key
+### 2. Set your OpenAI API key
 
-Add your API key to your environment. You can get a key from [console.anthropic.com](https://console.anthropic.com).
+Add your API key to your environment. You can get a key from [platform.openai.com](https://platform.openai.com).
 
 ```bash
-export ANTHROPIC_API_KEY="your-key-here"
+export OPENAI_API_KEY="your-key-here"
 ```
 
 Or add it to a `.env` file in the project root:
 
 ```
-ANTHROPIC_API_KEY=your-key-here
+OPENAI_API_KEY=your-key-here
 ```
 
 ### 3. Run the app
