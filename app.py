@@ -246,7 +246,7 @@ app_ui = ui.page_fillable(
         messages=[WELCOME],
         placeholder="Ask about any BJJ mental model...",
         height="100%",
-        icon_assistant = icon_svg("podcast")
+        icon_assistant = icon_svg("robot")
     ),
     fillable_mobile=True,
 )
